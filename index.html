@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Davie Signal Desk</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">D</div>
+        <div>
+          <strong>Davie Desk</strong>
+          <span>信号审阅系统</span>
+        </div>
+      </div>
+      <nav>
+        <button class="nav-item active" data-view="inbox">
+          <span>⌁</span><b>待确认</b><em id="nav-pending">0</em>
+        </button>
+        <button class="nav-item" data-view="signals">
+          <span>◫</span><b>喊单台账</b><em id="nav-open">0</em>
+        </button>
+        <button class="nav-item" data-view="analytics">
+          <span>↗</span><b>表现分析</b>
+        </button>
+      </nav>
+      <div class="source-card">
+        <div class="eyebrow">数据源</div>
+        <div class="source-row">
+          <i class="pulse"></i>
+          <div><strong>DeBox 在线</strong><span>仅 Davie · 30秒轮询</span></div>
+        </div>
+        <div class="source-meta"><span>会话</span><code>Davie Crypto</code></div>
+        <div class="source-meta"><span>Sender ID</span><code>3828203</code></div>
+      </div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div>
+          <p class="eyebrow" id="page-kicker">人工确认工作台</p>
+          <h1 id="page-title">今天，有哪些话值得记一笔？</h1>
+        </div>
+        <div class="top-actions">
+          <span class="last-sync" id="last-sync">正在同步…</span>
+          <button class="secondary" id="logout-btn">退出</button>
+          <button class="secondary" id="refresh-btn">↻ 同步新消息</button>
+        </div>
+      </header>
+
+      <section class="metric-grid" id="metrics">
+        <article><span>待确认候选</span><strong id="metric-pending">—</strong><small>需要你的判断</small></article>
+        <article><span>进行中喊单</span><strong id="metric-open">—</strong><small>等待后续或结算</small></article>
+        <article><span>已确认喊单</span><strong id="metric-total">—</strong><small>独立信号样本</small></article>
+        <article class="accent"><span>历史胜率</span><strong id="metric-winrate">—</strong><small id="metric-winrate-note">结算后自动计算</small></article>
+      </section>
+
+      <section id="view-inbox" class="view active">
+        <div class="section-head">
+          <div>
+            <h2>待确认队列</h2>
+            <p>AI 只做初筛，是否构成喊单由你拍板。</p>
+          </div>
+          <div class="segmented" id="queue-tabs">
+            <button class="active" data-queue="pending">疑似信号</button>
+            <button data-queue="all_pending">全部原话</button>
+            <button data-queue="watching">观察中</button>
+            <button data-queue="reviewed">已处理</button>
+          </div>
+        </div>
+        <div id="message-list" class="message-list"></div>
+      </section>
+
+      <section id="view-signals" class="view">
+        <div class="section-head">
+          <div><h2>喊单台账</h2><p>一条喊单可以串联多条原始言论。</p></div>
+          <div class="legend"><i class="long-dot"></i>多 <i class="short-dot"></i>空</div>
+        </div>
+        <div id="signal-board" class="signal-board"></div>
+      </section>
+
+      <section id="view-analytics" class="view">
+        <div class="section-head">
+          <div><h2>表现分析</h2><p>样本越完整，结论越可靠。</p></div>
+        </div>
+        <div class="analytics-grid">
+          <article class="analysis-card">
+            <span class="eyebrow">结算概览</span>
+            <strong id="analysis-settled">0</strong>
+            <p>已结算独立喊单</p>
+            <div class="bar"><i id="win-bar"></i></div>
+            <small id="analysis-win-text">暂无胜率样本</small>
+          </article>
+          <article class="analysis-card">
+            <span class="eyebrow">平均结果</span>
+            <strong id="analysis-r">—</strong>
+            <p>平均 R 倍数</p>
+            <small>仅统计填写了入场、止损和离场的数据</small>
+          </article>
+          <article class="analysis-card wide">
+            <span class="eyebrow">下一阶段</span>
+            <h3>承接窗口分析</h3>
+            <p>积累价格数据后，将对消息后 5 / 15 / 30 / 60 分钟的承接收益、最大回撤和胜率分别计算。</p>
+            <div class="timeline-placeholder">
+              <span style="--h:32%"></span><span style="--h:58%"></span><span style="--h:82%"></span>
+              <span style="--h:64%"></span><span style="--h:44%"></span><span style="--h:70%"></span>
+              <span style="--h:52%"></span><span style="--h:76%"></span><span style="--h:60%"></span>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="review-dialog">
+    <form method="dialog" id="review-form">
+      <header>
+        <div><span class="eyebrow">人工确认</span><h2 id="dialog-title">确认消息</h2></div>
+        <button class="icon-btn" type="button" data-close-dialog="review-dialog" aria-label="关闭">×</button>
+      </header>
+      <blockquote id="dialog-message"></blockquote>
+      <input type="hidden" id="dialog-message-id">
+      <div id="new-fields" class="form-grid">
+        <label>方向<select id="field-direction"><option value="long">做多</option><option value="short">做空</option></select></label>
+        <label>品种<input id="field-symbol" placeholder="例如 ETH"></label>
+        <label>入场价<input id="field-entry" type="number" step="any" placeholder="未知可留空"></label>
+        <label>止损价<input id="field-stop" type="number" step="any" placeholder="未知可留空"></label>
+        <label>止盈价<input id="field-target" type="number" step="any" placeholder="未知可留空"></label>
+      </div>
+      <div id="link-fields" class="form-grid hidden">
+        <label class="full">关联喊单<select id="field-signal"></select></label>
+        <label class="full">消息作用<select id="field-event-type">
+          <option value="evidence">延续观点</option><option value="add">加仓</option>
+          <option value="reduce">减仓</option><option value="stop_update">修改止损</option>
+          <option value="target_update">修改止盈</option><option value="close">平仓</option>
+        </select></label>
+      </div>
+      <label>人工备注<textarea id="field-note" placeholder="记录你做出判断的依据"></textarea></label>
+      <footer>
+        <button class="secondary" type="button" data-close-dialog="review-dialog">取消</button>
+        <button class="primary" id="dialog-submit" type="submit">确认</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="settle-dialog">
+    <form method="dialog" id="settle-form">
+      <header>
+        <div><span class="eyebrow" id="settle-kicker">人工结算</span><h2 id="settle-title">结算喊单</h2></div>
+        <button class="icon-btn" type="button" data-close-dialog="settle-dialog">×</button>
+      </header>
+      <input type="hidden" id="settle-signal-id">
+      <div class="result-options" id="result-options">
+        <button type="button" data-result="win">判断对</button>
+        <button type="button" data-result="loss">判断错</button>
+        <button type="button" data-result="partial">部分判断对</button>
+        <button type="button" data-result="breakeven">保本</button>
+        <button type="button" data-result="cancelled">未触发/取消</button>
+        <button type="button" data-result="unknown">待人工判断</button>
+      </div>
+      <div class="form-grid">
+        <label>离场价<input id="settle-close" type="number" step="any" placeholder="可留空"></label>
+        <label>实际 R 值<input id="settle-r" type="number" step="any" placeholder="可自动计算"></label>
+      </div>
+      <label>结算备注<textarea id="settle-note" placeholder="例如先止盈后回撤，按首次目标结算"></textarea></label>
+      <footer>
+        <button class="secondary" type="button" data-close-dialog="settle-dialog">取消</button>
+        <button class="primary" id="settle-submit" type="submit">完成结算</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="auth-dialog" class="auth-dialog">
+    <form id="auth-form">
+      <header>
+        <div><span class="eyebrow">DAVIE SIGNAL DESK</span><h2>进入人工工作台</h2></div>
+      </header>
+      <p class="auth-copy">输入访问令牌后加载喊单、上下文和复盘数据。</p>
+      <label>访问令牌<input id="auth-token" type="password" inputmode="numeric" autocomplete="current-password" placeholder="输入令牌"></label>
+      <p id="auth-error" class="auth-error" role="alert"></p>
+      <footer><button class="primary" type="submit">进入工作台</button></footer>
+    </form>
+  </dialog>
+
+  <div id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
