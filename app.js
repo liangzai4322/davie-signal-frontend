@@ -5,10 +5,9 @@ const state = {
 };
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
-const APP_BASE = window.location.hostname.endsWith("github.io")
-  ? "https://liangzai666.com/davie"
-  : window.location.pathname === "/davie" || window.location.pathname.startsWith("/davie/") ? "/davie" : "";
-const apiUrl = (path) => `${APP_BASE}${path}`;
+// The webpage is hosted by GitHub Pages; only data requests go to the server.
+const API_SERVER_BASE = "https://liangzai666.com/davie";
+const apiUrl = (path) => `${API_SERVER_BASE}${path}`;
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, c => ({
